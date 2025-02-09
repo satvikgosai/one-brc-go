@@ -15,8 +15,10 @@ func single(file_name string) {
 	defer file.Close()
 
 	scanner := bufio.NewScanner(file)
+	buf := make([]byte, 1024*1024*64) // 64 MB buffer
+	scanner.Buffer(buf, len(buf))
 
-	cities := make(map[string]*[4]float64)
+	cities := make(map[string]*[4]float64, 10000)
 
 	for scanner.Scan() {
 		line := strings.Split(scanner.Text(), ";")
@@ -32,7 +34,7 @@ func single(file_name string) {
 		}
 	}
 	// Abha=-23.0/18.0/59.2
-	var final_cities []string
+	final_cities := make([]string, 0, len(cities))
 	for city, temps := range cities {
 		final_cities = append(final_cities, fmt.Sprintf("%s=%.1f/%.1f/%.1f", city, temps[0], temps[1]/temps[3], temps[2]))
 	}
