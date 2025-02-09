@@ -5,9 +5,8 @@ import (
 	"fmt"
 	"math"
 	"os"
+	"slices"
 	"sort"
-	"strconv"
-	"strings"
 )
 
 func single(file_name string) {
@@ -19,11 +18,15 @@ func single(file_name string) {
 	scanner.Buffer(buf, len(buf))
 
 	cities := make(map[string]*[4]float64, 10000)
-
+	var city string
+	var temp float64
 	for scanner.Scan() {
-		line := strings.Split(scanner.Text(), ";")
-		city := line[0]
-		temp, _ := strconv.ParseFloat(line[1], 64)
+		byteArray := scanner.Bytes()
+
+		s := slices.Index(byteArray, 59)
+		city = string(byteArray[:s])
+		temp = parseFloat(&byteArray, s+1)
+
 		if existing, exists := cities[city]; exists {
 			existing[0] = math.Min(existing[0], temp)
 			existing[1] += temp
