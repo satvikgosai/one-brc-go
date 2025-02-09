@@ -3,7 +3,6 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"math"
 	"os"
 	"slices"
 	"sort"
@@ -17,29 +16,40 @@ func single(file_name string) {
 	buf := make([]byte, 1024*1024*64) // 64 MB buffer
 	scanner.Buffer(buf, len(buf))
 
-	cities := make(map[string]*[4]float64, 10000)
-	var city string
-	var temp float64
+	cities := make(map[uint64]*Data, 10000)
+
 	for scanner.Scan() {
 		byteArray := scanner.Bytes()
 
 		s := slices.Index(byteArray, 59)
-		city = string(byteArray[:s])
-		temp = parseFloat(&byteArray, s+1)
+		cityBytes := byteArray[:s]
+		city := FnvHash(&cityBytes)
+		temp := parseInt(&byteArray, s+1)
 
 		if existing, exists := cities[city]; exists {
-			existing[0] = math.Min(existing[0], temp)
-			existing[1] += temp
-			existing[2] = math.Max(existing[2], temp)
-			existing[3]++
+			if temp < existing.min {
+				existing.min = temp
+			} else if temp > existing.max {
+				existing.max = temp
+			}
+			existing.total += temp
+			existing.count++
 		} else {
-			cities[city] = &[4]float64{temp, temp, temp, 1}
+			cityBytesCopy := make([]byte, len(cityBytes))
+			copy(cityBytesCopy, cityBytes)
+			cities[city] = &Data{
+				min:   temp,
+				max:   temp,
+				total: temp,
+				count: 1,
+				city:  &cityBytesCopy,
+			}
 		}
 	}
 	// Abha=-23.0/18.0/59.2
 	final_cities := make([]string, 0, len(cities))
-	for city, temps := range cities {
-		final_cities = append(final_cities, fmt.Sprintf("%s=%.1f/%.1f/%.1f", city, temps[0], temps[1]/temps[3], temps[2]))
+	for _, temps := range cities {
+		final_cities = append(final_cities, fmt.Sprintf("%s=%.1f/%.1f/%.1f", string(*temps.city), float64(temps.min)/10, float64(temps.total)/float64(temps.count*10), float64(temps.max)/10))
 	}
 	sort.Strings(final_cities)
 	for _, value := range final_cities {
