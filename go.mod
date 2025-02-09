@@ -1,3 +1,3 @@
-module one_brc_go
+module github.com/satvikgosai/one-brc-go
 
 go 1.23.2
