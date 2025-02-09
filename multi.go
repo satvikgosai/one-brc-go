@@ -6,9 +6,8 @@ import (
 	"math"
 	"os"
 	"runtime"
+	"slices"
 	"sort"
-	"strconv"
-	"strings"
 )
 
 func multi(file_name string) {
@@ -50,12 +49,26 @@ func multi(file_name string) {
 	// Abha=-23.0/18.0/59.2
 	final_cities := make([]string, 0, len(cities))
 	for city, temps := range cities {
-		final_cities = append(final_cities, fmt.Sprintf("%s=%.1f/%.1f/%.1f", city, temps[0], temps[1]/temps[3], temps[2]))
+		final_cities = append(final_cities, fmt.Sprintf("%s=%.1f/%.1f/%.1f", city, temps[0]/10, temps[1]/(temps[3]*10), temps[2]/10))
 	}
 	sort.Strings(final_cities)
 	for _, value := range final_cities {
 		fmt.Println(value)
 	}
+}
+
+func parseFloat(byteArrayPtr *[]byte, s int) float64 {
+	byteArray := *byteArrayPtr
+	if byteArray[s] == 45 {
+		if byteArray[s+2] == 46 {
+			return -(float64(byteArray[s+1])*10 + float64(byteArray[s+3]) - 528)
+		}
+		return -(float64(byteArray[s+1])*100 + float64(byteArray[s+2])*10 + float64(byteArray[s+4]) - 5328)
+	}
+	if byteArray[s+1] == 46 {
+		return float64(byteArray[s])*10 + float64(byteArray[s+2]) - 528
+	}
+	return float64(byteArray[s])*100 + float64(byteArray[s+1])*10 + float64(byteArray[s+3]) - 5328
 }
 
 func parseRows(file_name string, start int, end int, ch chan<- map[string]*[4]float64) {
@@ -66,12 +79,16 @@ func parseRows(file_name string, start int, end int, ch chan<- map[string]*[4]fl
 	buf := make([]byte, 1024*1024*64) // 64 MB buffer
 	scanner.Buffer(buf, len(buf))
 	cities := make(map[string]*[4]float64, 10000)
+	var city string
+	var temp float64
 	for scanner.Scan() {
-		text := scanner.Text()
-		start += len(text) + 1
-		line := strings.Split(text, ";")
-		city := line[0]
-		temp, _ := strconv.ParseFloat(line[1], 64)
+		byteArray := scanner.Bytes()
+		start += len(byteArray) + 1
+
+		s := slices.Index(byteArray, 59)
+		city = string(byteArray[:s])
+		temp = parseFloat(&byteArray, s+1)
+
 		if existing, exists := cities[city]; exists {
 			existing[0] = math.Min(existing[0], temp)
 			existing[1] += temp
