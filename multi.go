@@ -18,17 +18,17 @@ type Data struct {
 	city  *[]byte
 }
 
-func multi(file_name string) {
-	file, _ := os.Open(file_name)
+func multi(fileName string) {
+	file, _ := os.Open(fileName)
 	fi, _ := file.Stat()
-	total_size := int(fi.Size())
-	max_workers := runtime.NumCPU()
-	interval := total_size / max_workers
-	channel := make(chan map[uint64]*Data, max_workers)
+	totalSize := int(fi.Size())
+	maxWorkers := runtime.NumCPU()
+	interval := totalSize / maxWorkers
+	channel := make(chan map[uint64]*Data, maxWorkers)
 	start := 0
-	for i := 1; i <= max_workers; i++ {
+	for i := 1; i <= maxWorkers; i++ {
 		end := i * interval
-		if i < max_workers {
+		if i < maxWorkers {
 			file.Seek(int64(end), 0)
 			b := make([]byte, 1)
 			for b[0] != '\n' {
@@ -36,13 +36,13 @@ func multi(file_name string) {
 				end++
 			}
 		} else {
-			end = total_size
+			end = totalSize
 		}
-		go parseRows(file_name, start, end, channel)
+		go parseRows(fileName, start, end, channel)
 		start = end
 	}
 	cities := make(map[uint64]*Data, 10000)
-	for i := 0; i < max_workers; i++ {
+	for i := 0; i < maxWorkers; i++ {
 		for city, temps := range <-channel {
 			if existing, exists := cities[city]; exists {
 				if temps.min < existing.min {
@@ -59,12 +59,20 @@ func multi(file_name string) {
 		}
 	}
 	// Abha=-23.0/18.0/59.2
-	final_cities := make([]string, 0, len(cities))
+	finalCities := make([]string, 0, len(cities))
 	for _, temps := range cities {
-		final_cities = append(final_cities, fmt.Sprintf("%s=%.1f/%.1f/%.1f", string(*temps.city), float64(temps.min)/10, float64(temps.total)/float64(temps.count*10), float64(temps.max)/10))
+		finalCities = append(
+			finalCities,
+			fmt.Sprintf(
+				"%s=%.1f/%.1f/%.1f",
+				string(*temps.city),
+				float64(temps.min)/10,
+				float64(temps.total)/float64(temps.count*10),
+				float64(temps.max)/10),
+		)
 	}
-	sort.Strings(final_cities)
-	for _, value := range final_cities {
+	sort.Strings(finalCities)
+	for _, value := range finalCities {
 		fmt.Println(value)
 	}
 }
@@ -83,14 +91,14 @@ func parseInt(byteArrayPtr *[]byte, s int) int {
 	return int(byteArray[s])*100 + int(byteArray[s+1])*10 + int(byteArray[s+3]) - 5328
 }
 
-func FnvHash(b *[]byte) uint64 {
+func fnvHash(b *[]byte) uint64 {
 	h := fnv.New64a()
 	h.Write(*b)
 	return h.Sum64()
 }
 
-func parseRows(file_name string, start int, end int, ch chan<- map[uint64]*Data) {
-	file, _ := os.Open(file_name)
+func parseRows(fileName string, start int, end int, ch chan<- map[uint64]*Data) {
+	file, _ := os.Open(fileName)
 	defer file.Close()
 	file.Seek(int64(start), 0)
 	scanner := bufio.NewScanner(file)
@@ -103,7 +111,7 @@ func parseRows(file_name string, start int, end int, ch chan<- map[uint64]*Data)
 
 		s := slices.Index(byteArray, 59)
 		cityBytes := byteArray[:s]
-		city := FnvHash(&cityBytes)
+		city := fnvHash(&cityBytes)
 		temp := parseInt(&byteArray, s+1)
 
 		if existing, exists := cities[city]; exists {

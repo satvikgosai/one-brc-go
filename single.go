@@ -8,8 +8,8 @@ import (
 	"sort"
 )
 
-func single(file_name string) {
-	file, _ := os.Open(file_name)
+func single(fileName string) {
+	file, _ := os.Open(fileName)
 	defer file.Close()
 
 	scanner := bufio.NewScanner(file)
@@ -23,7 +23,7 @@ func single(file_name string) {
 
 		s := slices.Index(byteArray, 59)
 		cityBytes := byteArray[:s]
-		city := FnvHash(&cityBytes)
+		city := fnvHash(&cityBytes)
 		temp := parseInt(&byteArray, s+1)
 
 		if existing, exists := cities[city]; exists {
@@ -47,12 +47,20 @@ func single(file_name string) {
 		}
 	}
 	// Abha=-23.0/18.0/59.2
-	final_cities := make([]string, 0, len(cities))
+	finalCities := make([]string, 0, len(cities))
 	for _, temps := range cities {
-		final_cities = append(final_cities, fmt.Sprintf("%s=%.1f/%.1f/%.1f", string(*temps.city), float64(temps.min)/10, float64(temps.total)/float64(temps.count*10), float64(temps.max)/10))
+		finalCities = append(
+			finalCities,
+			fmt.Sprintf(
+				"%s=%.1f/%.1f/%.1f",
+				string(*temps.city),
+				float64(temps.min)/10,
+				float64(temps.total)/float64(temps.count*10),
+				float64(temps.max)/10),
+		)
 	}
-	sort.Strings(final_cities)
-	for _, value := range final_cities {
+	sort.Strings(finalCities)
+	for _, value := range finalCities {
 		fmt.Println(value)
 	}
 }
