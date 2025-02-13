@@ -9,9 +9,9 @@ import (
 )
 
 func main() {
-	arg_len := len(os.Args)
+	argLen := len(os.Args)
 	args := os.Args
-	if arg_len < 2 {
+	if argLen < 2 {
 		fmt.Println("Please provide measurement file")
 	} else {
 		file, err := os.Open(args[1])
@@ -25,7 +25,7 @@ func main() {
 				_, err := strconv.ParseFloat(line[1], 64)
 				if err != nil {
 					fmt.Println("This file does not seems to be a measurements file")
-				} else if arg_len > 2 && args[2] == "--single" {
+				} else if argLen > 2 && args[2] == "--single" {
 					single(args[1])
 				} else {
 					multi(args[1])
